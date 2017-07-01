@@ -8,4 +8,4 @@ A simple weather app which can tell the weather update of your city
 ## Demo
 ![Imgur](http://i.imgur.com/CFiHDA0.png)
 ![Imgur](http://i.imgur.com/0VfTumr.png)
-
+!![Imgur](http://i.imgur.com/PjrmVWz.png)
