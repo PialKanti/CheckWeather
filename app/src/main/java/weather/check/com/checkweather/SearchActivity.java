@@ -100,6 +100,7 @@ public class SearchActivity extends AppCompatActivity {
         SearchButton = (Button) findViewById(R.id.b_SearchButton);
         toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
+        toolbar.setTitleTextColor(getResources().getColor(R.color.white_font));
         getSupportActionBar().setTitle("Add a location");
         coordinatorLayout = (CoordinatorLayout) findViewById(R.id.CoordinatorLayout);
         locationButton = (FloatingActionButton) findViewById(R.id.fb_location);
