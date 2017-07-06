@@ -1,4 +1,4 @@
-package POJO;
+package weather.check.com.checkweather.POJO;
 
 import java.io.Serializable;
 

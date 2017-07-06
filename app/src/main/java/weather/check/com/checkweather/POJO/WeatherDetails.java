@@ -1,4 +1,4 @@
-package POJO;
+package weather.check.com.checkweather.POJO;
 
 import java.io.Serializable;
 import java.util.ArrayList;
@@ -17,7 +17,6 @@ public class WeatherDetails implements Serializable{
     private String SunriseTime;
     private String SunsetTime;
     private String IconCode;
-    private ArrayList<WeatherForecast> forecasts;
 
     public String getWeatherDescription() {
         return weatherDescription;
@@ -91,11 +90,4 @@ public class WeatherDetails implements Serializable{
         IconCode = iconCode;
     }
 
-    public ArrayList<WeatherForecast> getForecasts() {
-        return forecasts;
-    }
-
-    public void setForecasts(ArrayList<WeatherForecast> forecasts) {
-        this.forecasts = forecasts;
-    }
 }

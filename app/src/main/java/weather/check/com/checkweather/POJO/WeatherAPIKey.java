@@ -1,4 +1,4 @@
-package POJO;
+package weather.check.com.checkweather.POJO;
 
 /**
  * Created by Pial on 5/20/2017.

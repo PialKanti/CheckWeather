@@ -1,4 +1,4 @@
-package data;
+package weather.check.com.checkweather.utills;
 
 import android.content.Context;
 import android.net.ConnectivityManager;

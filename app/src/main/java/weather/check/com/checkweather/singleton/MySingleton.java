@@ -1,4 +1,4 @@
-package singleton;
+package weather.check.com.checkweather.singleton;
 
 import android.content.Context;
 

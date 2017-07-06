@@ -30,8 +30,8 @@
             android:id="@+id/ContentTextValue"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="7.5 km/h"
             android:textColor="@color/white_font"
+            android:text="4.05 mph"
             android:textSize="16sp" />
     </LinearLayout>
 

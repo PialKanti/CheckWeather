@@ -1,3 +1,4 @@
 <resources>
     <string name="app_name">Check Weather</string>
+    <string name="preference_file_name">CheckWeather</string>
 </resources>

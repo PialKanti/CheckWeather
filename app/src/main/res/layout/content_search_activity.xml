@@ -16,16 +16,16 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="vertical">
-        <EditText
-            android:id="@+id/SearchBar"
+        <AutoCompleteTextView
+            android:id="@+id/actv_SearchBar"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:hint="Enter city name..."/>
+            android:hint="Search your city..." />
         <Button
-            android:id="@+id/SearchButton"
+            android:id="@+id/b_SearchButton"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:background="@color/colorAccent"
-            android:text="Search"/>
+            android:text="Add"/>
     </LinearLayout>
 </RelativeLayout>

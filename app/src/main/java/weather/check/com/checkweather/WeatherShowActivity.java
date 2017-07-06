@@ -1,44 +1,142 @@
 package weather.check.com.checkweather;
 
+import android.content.Context;
+import android.content.Intent;
+import android.content.SharedPreferences;
+import android.database.sqlite.SQLiteDatabase;
+import android.graphics.Color;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.support.v7.widget.GridLayoutManager;
+import android.support.v7.widget.RecyclerView;
+import android.support.v7.widget.Toolbar;
+import android.util.Log;
+import android.view.Menu;
+import android.view.MenuInflater;
+import android.view.MenuItem;
+import android.view.View;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
+import android.widget.ProgressBar;
 import android.widget.TextView;
+import android.widget.Toast;
 
+import com.android.volley.Request;
+import com.android.volley.Response;
+import com.android.volley.VolleyError;
+import com.android.volley.toolbox.JsonObjectRequest;
 import com.squareup.picasso.Picasso;
 
 import org.apache.commons.lang3.text.WordUtils;
+import org.json.JSONObject;
 
 import java.text.DecimalFormat;
 import java.util.ArrayList;
 
-import POJO.WeatherAPIKey;
-import POJO.WeatherDetails;
-import POJO.WeatherForecast;
+import weather.check.com.checkweather.POJO.WeatherAPIKey;
+import weather.check.com.checkweather.POJO.WeatherDetails;
+import weather.check.com.checkweather.POJO.WeatherForecast;
+import weather.check.com.checkweather.adapter.ForecastAdapter;
+import weather.check.com.checkweather.database.DatabaseHelper;
+import weather.check.com.checkweather.database.DatabaseOperations;
+import weather.check.com.checkweather.singleton.MySingleton;
+import weather.check.com.checkweather.utills.CheckingInternetConnection;
+import weather.check.com.checkweather.utills.ParseJsonData;
 
 public class WeatherShowActivity extends AppCompatActivity {
 
     private LinearLayout Main_background, top_left, top_right, bottom_left, bottom_right;
+    private LinearLayout WeatherContent;
     private ImageView IconImage, WindSpeedImage, HumidityImage, SunriseImage, SunsetImage;
-    private TextView CityName, WeatherDescription, Temperature;
+    private TextView CityName, CountryName, WeatherDescription, Temperature;
     private TextView WindSpeedText, WindSpeedValue, HumidityText, HumidityValue, SunriseText, SunriseValue, SunsetText, SunsetValue;
-
-    private LinearLayout Day1View,Day2View,Day3View,Day4View,Day5View;
-    private ImageView Day1Image,Day2Image,Day3Image,Day4Image,Day5Image;
-    private TextView Day1,Day2,Day3,Day4,Day5;
-    private TextView Day1Temp,Day2Temp,Day3Temp,Day4Temp,Day5Temp;
+    private RecyclerView ForecastShow;
+    private ProgressBar progressBar;
+    private WeatherDetails Wdetails;
+    private WeatherAPIKey key;
+    private String city;
+    private ForecastAdapter forecastAdapter;
+    private DatabaseHelper mHelper;
+    private SQLiteDatabase db;
+    private DatabaseOperations dbOperations;
+    private boolean loadDataFromInternet;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_weather_show);
 
-        WeatherDetails Wdetails = (WeatherDetails) getIntent().getSerializableExtra("WeatherDetails");
 
-        Main_background = (LinearLayout)findViewById(R.id.MainContent);
+        Intent intent = getIntent();
+        if (intent.hasExtra("CityName")) {
+            city = intent.getStringExtra("CityName");
+            loadDataFromInternet = true;
+
+            //Writing into SharedPreferences
+            SharedPreferences preferences = getSharedPreferences(getString(R.string.preference_file_name), Context.MODE_PRIVATE);
+            SharedPreferences.Editor editor = preferences.edit();
+            editor.putString("City", city);
+            editor.commit();
+            Log.d("Debug", "Writing into SharedPreferences");
+        } else {
+            loadDataFromInternet = false;
+        }
+
+        Toolbar toolbar = (Toolbar) findViewById(R.id.transparent_toolbar);
+        setSupportActionBar(toolbar);
+        getSupportActionBar().setTitle("");
+
+        initialize();
+        WeatherContent.setVisibility(View.GONE);
+        progressBar.setVisibility(View.VISIBLE);
+
+        //Checking if data exits in database or not
+        if (loadDataFromInternet) {
+            loadWeatherData(city, true);
+        } else {
+            setData();
+        }
+
+    }
+
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        MenuInflater inflater = getMenuInflater();
+        inflater.inflate(R.menu.weather_details_menu, menu);
+        return true;
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        switch (item.getItemId()) {
+            case R.id.menu_refresh:
+                if (CheckingInternetConnection.isIntenetOn(getApplicationContext())) {
+                    SharedPreferences preferences = getSharedPreferences(getString(R.string.preference_file_name), Context.MODE_PRIVATE);
+                    String cityName = preferences.getString("City", null);
+                    WeatherContent.setVisibility(View.GONE);
+                    progressBar.setVisibility(View.VISIBLE);
+                    loadWeatherData(cityName, false);
+                } else {
+                    Toast.makeText(getApplicationContext(), "No internet connection", Toast.LENGTH_SHORT).show();
+                }
+                return true;
+            default:
+                return super.onOptionsItemSelected(item);
+        }
+    }
+
+    @Override
+    protected void onDestroy() {
+        mHelper.close();
+        super.onDestroy();
+    }
+
+    public void initialize() {
+        Main_background = (LinearLayout) findViewById(R.id.MainContent);
+        WeatherContent = (LinearLayout) findViewById(R.id.WeatherContent);
 
         CityName = (TextView) findViewById(R.id.CityName);
+        CountryName = (TextView) findViewById(R.id.CountryName);
         WeatherDescription = (TextView) findViewById(R.id.WeatherDescription);
 
         IconImage = (ImageView) findViewById(R.id.IconImage);
@@ -67,40 +165,39 @@ public class WeatherShowActivity extends AppCompatActivity {
         SunsetText = (TextView) bottom_right.findViewById(R.id.ContentText);
         SunsetValue = (TextView) bottom_right.findViewById(R.id.ContentTextValue);
 
-        Day1View = (LinearLayout)findViewById(R.id.Day1);
-        Day2View = (LinearLayout)findViewById(R.id.Day2);
-        Day3View = (LinearLayout)findViewById(R.id.Day3);
-        Day4View = (LinearLayout)findViewById(R.id.Day4);
-        Day5View = (LinearLayout)findViewById(R.id.Day5);
+        ForecastShow = (RecyclerView) findViewById(R.id.rv_forecast);
+        progressBar = (ProgressBar) findViewById(R.id.pb_progressBar);
 
-        Day1Image = (ImageView)Day1View.findViewById(R.id.forecastImage);
-        Day2Image = (ImageView)Day2View.findViewById(R.id.forecastImage);
-        Day3Image = (ImageView)Day3View.findViewById(R.id.forecastImage);
-        Day4Image = (ImageView)Day4View.findViewById(R.id.forecastImage);
-        Day5Image = (ImageView)Day5View.findViewById(R.id.forecastImage);
+        GridLayoutManager layoutManager = new GridLayoutManager(this, 5);
+        ForecastShow.setLayoutManager(layoutManager);
+        forecastAdapter = new ForecastAdapter();
+        ForecastShow.setAdapter(forecastAdapter);
+    }
 
-        Day1 = (TextView)Day1View.findViewById(R.id.forecastDay);
-        Day2= (TextView)Day2View.findViewById(R.id.forecastDay);
-        Day3= (TextView)Day3View.findViewById(R.id.forecastDay);
-        Day4= (TextView)Day4View.findViewById(R.id.forecastDay);
-        Day5= (TextView)Day5View.findViewById(R.id.forecastDay);
+    public void setData() {
+        //Getting data from Database
+        mHelper = new DatabaseHelper(getApplicationContext());
+        db = mHelper.getReadableDatabase();
+        dbOperations = new DatabaseOperations(db);
+        WeatherDetails Wdetails = dbOperations.getDataFromWeatherTable();
+        ArrayList<WeatherForecast> forecasts = dbOperations.getDataFromForecastTable();
 
-        Day1Temp = (TextView)Day1View.findViewById(R.id.forecastTemp);
-        Day2Temp = (TextView)Day2View.findViewById(R.id.forecastTemp);
-        Day3Temp = (TextView)Day3View.findViewById(R.id.forecastTemp);
-        Day4Temp = (TextView)Day4View.findViewById(R.id.forecastTemp);
-        Day5Temp = (TextView)Day5View.findViewById(R.id.forecastTemp);
+        WeatherContent.setVisibility(View.VISIBLE);
+        progressBar.setVisibility(View.GONE);
 
-        //Setting all layout resources
-        if(Wdetails.getIconCode().charAt(Wdetails.getIconCode().length()-1) == 'd'){
-            Main_background.setBackground(getResources().getDrawable(R.drawable.dayimage));
-        }else if(Wdetails.getIconCode().charAt(Wdetails.getIconCode().length()-1) == 'n'){
-            Main_background.setBackground(getResources().getDrawable(R.drawable.nightimage));
-        }else{
-            Main_background.setBackground(getResources().getDrawable(R.drawable.dayimage));
+        if (Wdetails.getIconCode().charAt(Wdetails.getIconCode().length() - 1) == 'd') {
+            Main_background.setBackgroundResource(R.mipmap.day_image);
+            Temperature.setShadowLayer(1.5f, 5.0f, 5.0f, Color.parseColor("#3CA6A5"));
+        } else if (Wdetails.getIconCode().charAt(Wdetails.getIconCode().length() - 1) == 'n') {
+            Main_background.setBackgroundResource(R.mipmap.night_image);
+            Temperature.setShadowLayer(1.5f, 5.0f, 5.0f, Color.parseColor("#343B75"));
+        } else {
+            Main_background.setBackgroundResource(R.mipmap.day_image);
+            Temperature.setShadowLayer(1.5f, 5.0f, 5.0f, Color.parseColor("#3CA6A5"));
         }
 
-        CityName.setText(Wdetails.getCityName() + ", " + Wdetails.getCountryName());
+        CityName.setText(Wdetails.getCityName() + ",");
+        CountryName.setText(Wdetails.getCountryName());
 
 
         WeatherDescription.setText(WordUtils.capitalize(Wdetails.getWeatherDescription()));
@@ -108,7 +205,8 @@ public class WeatherShowActivity extends AppCompatActivity {
         //Showing Image from URL to ImageView
         Picasso.with(getApplicationContext()).load(WeatherAPIKey.ImageURL + Wdetails.getIconCode() + ".png").into(IconImage);
 
-        Temperature.setText(new DecimalFormat("#0.0").format(Wdetails.getTemperatue()) + " \u2103");
+
+        Temperature.setText(new DecimalFormat("#0").format(Wdetails.getTemperatue()) + " \u2103");
 
         WindSpeedImage.setImageResource(R.mipmap.ic_wind_speed);
         HumidityImage.setImageResource(R.mipmap.ic_humidity);
@@ -127,27 +225,74 @@ public class WeatherShowActivity extends AppCompatActivity {
         SunsetText.setText("Sunset");
         SunsetValue.setText(Wdetails.getSunsetTime());
 
-        ArrayList<WeatherForecast> forecasts = Wdetails.getForecasts();
 
-        Picasso.with(getApplicationContext()).load(WeatherAPIKey.ImageURL + forecasts.get(0).getIconCode() + ".png").into(Day1Image);
-        Picasso.with(getApplicationContext()).load(WeatherAPIKey.ImageURL + forecasts.get(1).getIconCode() + ".png").into(Day2Image);
-        Picasso.with(getApplicationContext()).load(WeatherAPIKey.ImageURL + forecasts.get(2).getIconCode() + ".png").into(Day3Image);
-        Picasso.with(getApplicationContext()).load(WeatherAPIKey.ImageURL + forecasts.get(3).getIconCode() + ".png").into(Day4Image);
-        Picasso.with(getApplicationContext()).load(WeatherAPIKey.ImageURL + forecasts.get(4).getIconCode() + ".png").into(Day5Image);
+        /*GridLayoutManager layoutManager = new GridLayoutManager(this, 5);
+        ForecastShow.setLayoutManager(layoutManager);
 
-        Day1.setText(forecasts.get(0).getDay());
-        Day2.setText(forecasts.get(1).getDay());
-        Day3.setText(forecasts.get(2).getDay());
-        Day4.setText(forecasts.get(3).getDay());
-        Day5.setText(forecasts.get(4).getDay());
+         = new ForecastAdapter();*/
+        forecastAdapter.setForecastData(forecasts);
+        /*ForecastShow.setAdapter(forecastAdapter);*/
+    }
 
-        Day1Temp.setText(new DecimalFormat("#0").format(forecasts.get(0).getTemperature())+ " \u2103");
-        Day2Temp.setText(new DecimalFormat("#0").format(forecasts.get(1).getTemperature())+ " \u2103");
-        Day3Temp.setText(new DecimalFormat("#0").format(forecasts.get(2).getTemperature())+ " \u2103");
-        Day4Temp.setText(new DecimalFormat("#0").format(forecasts.get(3).getTemperature())+ " \u2103");
-        Day5Temp.setText(new DecimalFormat("#0").format(forecasts.get(4).getTemperature())+ " \u2103");
+    public void loadWeatherData(String city, final boolean shouldInsert) {
+        key = new WeatherAPIKey();
+        key.setUrl(city);
+        String url = key.getUrl();
+        //Setting JsonObject Request
+        JsonObjectRequest request = new JsonObjectRequest(Request.Method.GET, url, null, new Response.Listener<JSONObject>() {
+
+            @Override
+            public void onResponse(JSONObject response) {
+                ParseJsonData parseData = new ParseJsonData();
+                Wdetails = parseData.parseMainJson(response);
+                loadForecastData(Wdetails.getCityName(), shouldInsert);
+            }
+        }, new Response.ErrorListener() {
+            @Override
+            public void onErrorResponse(VolleyError error) {
+                Log.d("Check", "Something goes Wrong on JsonRequest");
+                Toast.makeText(getApplicationContext(), "City not found", Toast.LENGTH_SHORT).show();
+            }
+        });
+
+        MySingleton.getInstance(this).addToRequestQueue(request);
+    }
+
+    public void loadForecastData(String CityName, final boolean shouldInsert) {
+        key = new WeatherAPIKey();
+        key.setForecastURL(CityName);
+        JsonObjectRequest request = new JsonObjectRequest(Request.Method.GET, key.getForecastURL(), null, new Response.Listener<JSONObject>() {
+            @Override
+            public void onResponse(JSONObject response) {
+                ParseJsonData jsonData = new ParseJsonData();
+                ArrayList<WeatherForecast> forecasts = jsonData.parseForecastJson(response);
+                Log.d("Debug", Wdetails.getSunriseTime());
 
 
+                //Initializing SqliteDatabase
+                mHelper = new DatabaseHelper(getApplicationContext());
+                db = mHelper.getWritableDatabase();
+                dbOperations = new DatabaseOperations(db);
 
+                if (shouldInsert) {
+                    //Inserting into database
+                    dbOperations.insertIntoWeatherTable(Wdetails);
+                    dbOperations.insertIntoForecastTable(forecasts);
+                } else {
+                    dbOperations.updateWeatherTable(Wdetails);
+                    dbOperations.updateForecastTable(forecasts);
+                }
+
+                setData();
+
+            }
+        }, new Response.ErrorListener() {
+            @Override
+            public void onErrorResponse(VolleyError error) {
+                Log.i("Check", "Something goes Wrong on ForecastJsonRequest");
+            }
+        });
+
+        MySingleton.getInstance(this).addToRequestQueue(request);
     }
 }
