@@ -1,11 +1,11 @@
 # CheckWeather
 A simple weather app which can tell the weather update of your city
 
-## Framework used
+## Weather API Used
 - [OpenWeatherMap API](https://openweathermap.org/)
-- [ButterKnife](https://github.com/JakeWharton/butterknife)
 
 ## Demo
-![Imgur](http://i.imgur.com/CFiHDA0.png)
-![Imgur](http://i.imgur.com/0VfTumr.png)
-!![Imgur](http://i.imgur.com/PjrmVWz.png)
+![Imgur](http://i.imgur.com/hNUBc5d.png)
+![Imgur](http://i.imgur.com/nbdFCmX.png)
+![Imgur](http://i.imgur.com/LawC3hU.png)
+![Imgur](http://i.imgur.com/Nwa8mcz.png)
