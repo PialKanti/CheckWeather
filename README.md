@@ -16,7 +16,7 @@ A simple weather app which can tell the weather update of your city
 - User can set preferred Wind Speed Unit ( Currently supported <b>m/s</b>, <b>mph</b>, <b>km/h</b>)
 
 ## Pre-requisites
-- Android 4.1(JELLY BEAN) or Higher
+- Android 4.1(Jelly Bean) or Higher
 
 ## Demo
 ![Imgur](http://i.imgur.com/hNUBc5d.png)
