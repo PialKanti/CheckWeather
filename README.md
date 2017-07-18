@@ -18,6 +18,9 @@ A simple weather app which can tell the weather update of your city
 ## Pre-requisites
 - Android 4.1(Jelly Bean) or Higher
 
+## User Limits for Place Api
+The Google Places API Web Service enforces a default limit of <b>1,000 free requests per 24 hour period</b>. So if the request count pass the limit the app may crash. If this happens, just stop <b>Show City Name Suggestion</b> from app settings.
+
 ## Demo
 ![Imgur](http://i.imgur.com/hNUBc5d.png)
 ![Imgur](http://i.imgur.com/nbdFCmX.png)
