@@ -12,8 +12,8 @@ A simple weather app which can tell the weather update of your city
 - Showed previously cached weather data while offline
 - User can refresh to get current weather information
 - User can change location from setting options
-- User can set preferred Temperature Unit(Currently supported <b>Celsius</b>, <b>Fahrenheit</b>)
-- User can set preferred Wind Speed Unit(Currently supported <b>m/s</b>, <b>mph</b>, <b>km/h</b>)
+- User can set preferred Temperature Unit ( Currently supported <b>Celsius</b>, <b>Fahrenheit</b>)
+- User can set preferred Wind Speed Unit ( Currently supported <b>m/s</b>, <b>mph</b>, <b>km/h</b>)
 
 ## Demo
 ![Imgur](http://i.imgur.com/hNUBc5d.png)
