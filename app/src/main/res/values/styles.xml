@@ -11,6 +11,12 @@
         <item name="colorPrimaryDark">@color/colorPrimaryDark</item>
         <item name="android:textColorSecondary">@color/white_font</item>
         <item name="colorAccent">@color/colorAccent</item>
+        <item name="preferenceTheme">@style/settings_screen</item>
+    </style>
+
+    <style name="settings_screen" parent="PreferenceThemeOverlay">
+        <item name="android:textSize">18sp</item>
+        <item name="android:textColorSecondary">#7c7878</item>
     </style>
 
 </resources>

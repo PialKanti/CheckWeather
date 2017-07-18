@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <array name="pref_temperature_unit_labels">
+        <item>@string/celsius_label</item>
+        <item>@string/fahrenheit_label</item>
+    </array>
+
+    <array name="pref_temperature_unit_values">
+        <item>@string/celsius_value_name</item>
+        <item>@string/fahrenheit_value_name</item>
+    </array>
+
+    <array name="pref_windspeed_unit_labels">
+        <item>@string/ms_label</item>
+        <item>@string/mph_label</item>
+        <item>@string/kmh_label</item>
+    </array>
+
+    <array name="pref_windspeed_unit_values">
+        <item>@string/ms_label</item>
+        <item>@string/mph_label</item>
+        <item>@string/kmh_label</item>
+    </array>
+</resources>

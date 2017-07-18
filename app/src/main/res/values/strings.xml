@@ -1,4 +1,20 @@
 <resources>
     <string name="app_name">Check Weather</string>
     <string name="preference_file_name">CheckWeather</string>
+    <string name="action_settings">Settings</string>
+    <string name="celsius_label">\u2103</string>
+    <string name="fahrenheit_label">\u2109</string>
+    <string name="celsius_value_name">Celsius</string>
+    <string name="fahrenheit_value_name">Fahrenheit</string>
+
+    <string name="pref_temperature_unit_title">Temperature Unit</string>
+    <string name="pref_windspeed_unit_title">Wind Speed Unit</string>
+
+    <string name="ms_label">m/s</string>
+    <string name="mph_label">mph</string>
+    <string name="kmh_label">km/h</string>
+
+
+    <string name="pref_temp_unit_key">temperature_unit_key</string>
+    <string name="pref_windspeed_unit_key">windspeed_unit_key</string>
 </resources>

@@ -9,17 +9,21 @@ import java.util.TimeZone;
  */
 
 public class Conversion {
-    public double KelvinToCelsius(double kelvin) {
-        return kelvin - 273.15;
+    public static double KelvinToCelsius(double kelvin) {
+        return Math.abs(kelvin - 273.15);
     }
 
-    public double KelvinToFahrenheit(double kelvin) {
+    public static double KelvinToFahrenheit(double kelvin) {
         return ((9 / 5) * (kelvin - 273) + 32);
     }
 
     //Meter per second to miles per hour convertion
-    public double msTomph(double speed) {
-        return speed * (3600 / 1609.3);
+    public static double msTomph(double speed) {
+        return speed * (3600.0 / 1609.3);
+    }
+
+    public static double msTokmh(double speed) {
+        return speed * (3600.0 / 1000.0);
     }
 
     public String UnixTimestampToDate(int timestamp) {

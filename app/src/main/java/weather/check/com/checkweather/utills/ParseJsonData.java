@@ -44,11 +44,11 @@ public class ParseJsonData {
             CityName = mainJsonObject.getString("name");
 
             JSONObject main = mainJsonObject.getJSONObject("main");
-            Temperatue = conversion.KelvinToCelsius(main.getDouble("temp"));
+            Temperatue = main.getDouble("temp");
             Humidity = main.getInt("humidity");
 
             JSONObject wind = mainJsonObject.getJSONObject("wind");
-            WindSpeed = conversion.msTomph(wind.getDouble("speed"));
+            WindSpeed = wind.getDouble("speed");
 
             JSONObject sys = mainJsonObject.getJSONObject("sys");
             CountryCode = sys.getString("country");
@@ -81,14 +81,14 @@ public class ParseJsonData {
         Conversion conversion = new Conversion();
         ArrayList<WeatherForecast> forecasts = new ArrayList<>();
         String IconCode = "10d";
-        Double TemperatureCelsius;
+        Double Temperature;
         try {
             JSONArray ForecastList = jsobject.getJSONArray("list");
             for (int i = 1; i < ForecastList.length(); i++) {
                 JSONObject PerDayWeather = ForecastList.getJSONObject(i);
 
                 JSONObject temp = PerDayWeather.getJSONObject("temp");
-                TemperatureCelsius = conversion.KelvinToCelsius(temp.getDouble("day"));
+                Temperature = temp.getDouble("day");
 
 
 
@@ -101,7 +101,7 @@ public class ParseJsonData {
                 }
 
                 WeatherForecast singleForecast = new WeatherForecast();
-                singleForecast.setTemperature(TemperatureCelsius);
+                singleForecast.setTemperature(Temperature);
                 singleForecast.setDay(DayofWeek);
                 singleForecast.setIconCode(IconCode);
 

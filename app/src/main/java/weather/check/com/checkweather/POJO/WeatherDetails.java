@@ -11,8 +11,8 @@ public class WeatherDetails implements Serializable{
     private String weatherDescription;
     private String CityName;
     private String CountryName;
-    private double Temperatue;
-    private double WindSpeed;
+    private double Temperatue; //Default Unit is kelvin
+    private double WindSpeed;  // Default Unit is m/s
     private double Humidity;
     private String SunriseTime;
     private String SunsetTime;

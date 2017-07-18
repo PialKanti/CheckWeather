@@ -7,6 +7,7 @@ import android.database.sqlite.SQLiteDatabase;
 import android.graphics.Color;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.support.v7.preference.PreferenceManager;
 import android.support.v7.widget.GridLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.Toolbar;
@@ -41,9 +42,10 @@ import weather.check.com.checkweather.database.DatabaseHelper;
 import weather.check.com.checkweather.database.DatabaseOperations;
 import weather.check.com.checkweather.singleton.MySingleton;
 import weather.check.com.checkweather.utills.CheckingInternetConnection;
+import weather.check.com.checkweather.utills.Conversion;
 import weather.check.com.checkweather.utills.ParseJsonData;
 
-public class WeatherShowActivity extends AppCompatActivity {
+public class WeatherShowActivity extends AppCompatActivity implements SharedPreferences.OnSharedPreferenceChangeListener {
 
     private LinearLayout Main_background, top_left, top_right, bottom_left, bottom_right;
     private LinearLayout WeatherContent;
@@ -60,6 +62,8 @@ public class WeatherShowActivity extends AppCompatActivity {
     private SQLiteDatabase db;
     private DatabaseOperations dbOperations;
     private boolean loadDataFromInternet;
+    private double TemperatureInKelvin;
+    private double WindSpeedInms;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -120,6 +124,9 @@ public class WeatherShowActivity extends AppCompatActivity {
                     Toast.makeText(getApplicationContext(), "No internet connection", Toast.LENGTH_SHORT).show();
                 }
                 return true;
+            case R.id.menu_settings:
+                Intent intent = new Intent(WeatherShowActivity.this, SettingsActivity.class);
+                startActivity(intent);
             default:
                 return super.onOptionsItemSelected(item);
         }
@@ -128,6 +135,7 @@ public class WeatherShowActivity extends AppCompatActivity {
     @Override
     protected void onDestroy() {
         mHelper.close();
+        PreferenceManager.getDefaultSharedPreferences(this).unregisterOnSharedPreferenceChangeListener(this);
         super.onDestroy();
     }
 
@@ -205,8 +213,20 @@ public class WeatherShowActivity extends AppCompatActivity {
         //Showing Image from URL to ImageView
         Picasso.with(getApplicationContext()).load(WeatherAPIKey.ImageURL + Wdetails.getIconCode() + ".png").into(IconImage);
 
+        //Getting Data from Shared Preference
+        SharedPreferences preferences = PreferenceManager.getDefaultSharedPreferences(this);
+        String tempUnit = preferences.getString(getString(R.string.pref_temp_unit_key), getString(R.string.celsius_value_name));
+        String WindSpeedUnit = preferences.getString(getString(R.string.pref_windspeed_unit_key), getString(R.string.mph_label));
 
-        Temperature.setText(new DecimalFormat("#0").format(Wdetails.getTemperatue()) + " \u2103");
+        TemperatureInKelvin = Wdetails.getTemperatue();
+        WindSpeedInms = Wdetails.getWindSpeed();
+
+
+        if (tempUnit.equals(getString(R.string.celsius_value_name)))
+            Temperature.setText(new DecimalFormat("#0").format(Conversion.KelvinToCelsius(TemperatureInKelvin)) + " \u2103");
+        else if (tempUnit.equals(getString(R.string.fahrenheit_value_name)))
+            Temperature.setText(new DecimalFormat("#0").format(Conversion.KelvinToFahrenheit(TemperatureInKelvin)) + " \u2109");
+
 
         WindSpeedImage.setImageResource(R.mipmap.ic_wind_speed);
         HumidityImage.setImageResource(R.mipmap.ic_humidity);
@@ -214,7 +234,13 @@ public class WeatherShowActivity extends AppCompatActivity {
         SunsetImage.setImageResource(R.mipmap.ic_sunset);
 
         WindSpeedText.setText("Wind Speed");
-        WindSpeedValue.setText(new DecimalFormat("#0.00").format(Wdetails.getWindSpeed()) + " mph");
+
+        if (WindSpeedUnit.equals(getString(R.string.ms_label)))
+            WindSpeedValue.setText(new DecimalFormat("#0.00").format(WindSpeedInms) + " " + getString(R.string.ms_label));
+        else if (WindSpeedUnit.equals(getString(R.string.mph_label)))
+            WindSpeedValue.setText(new DecimalFormat("#0.00").format(Conversion.msTomph(WindSpeedInms)) + " " + getString(R.string.mph_label));
+        else if (WindSpeedUnit.equals(getString(R.string.kmh_label)))
+            WindSpeedValue.setText(new DecimalFormat("#0.00").format(Conversion.msTokmh(WindSpeedInms)) + " " + getString(R.string.kmh_label));
 
         HumidityText.setText("Humidity");
         HumidityValue.setText(new DecimalFormat("#0").format(Wdetails.getHumidity()) + "%");
@@ -226,12 +252,9 @@ public class WeatherShowActivity extends AppCompatActivity {
         SunsetValue.setText(Wdetails.getSunsetTime());
 
 
-        /*GridLayoutManager layoutManager = new GridLayoutManager(this, 5);
-        ForecastShow.setLayoutManager(layoutManager);
-
-         = new ForecastAdapter();*/
         forecastAdapter.setForecastData(forecasts);
-        /*ForecastShow.setAdapter(forecastAdapter);*/
+
+        preferences.registerOnSharedPreferenceChangeListener(this);
     }
 
     public void loadWeatherData(String city, final boolean shouldInsert) {
@@ -295,4 +318,31 @@ public class WeatherShowActivity extends AppCompatActivity {
 
         MySingleton.getInstance(this).addToRequestQueue(request);
     }
+
+
+    @Override
+    public void onSharedPreferenceChanged(SharedPreferences sharedPreferences, String key) {
+        if (key.equals(getString(R.string.pref_temp_unit_key))) {
+            String tempUnit = sharedPreferences.getString(key, getString(R.string.celsius_value_name));
+
+            if (tempUnit.equals(getString(R.string.celsius_value_name)))
+                Temperature.setText(new DecimalFormat("#0").format(Conversion.KelvinToCelsius(TemperatureInKelvin)) + " \u2103");
+            else if (tempUnit.equals(getString(R.string.fahrenheit_value_name)))
+                Temperature.setText(new DecimalFormat("#0").format(Conversion.KelvinToFahrenheit(TemperatureInKelvin)) + " \u2109");
+
+            forecastAdapter.notifyDataSetChanged();
+        } else if (key.equals(getString(R.string.pref_windspeed_unit_key))) {
+
+            String WindSpeedUnit = sharedPreferences.getString(key, getString(R.string.mph_label));
+
+            if (WindSpeedUnit.equals(getString(R.string.ms_label)))
+                WindSpeedValue.setText(new DecimalFormat("#0.00").format(WindSpeedInms) + " " + getString(R.string.ms_label));
+            else if (WindSpeedUnit.equals(getString(R.string.mph_label)))
+                WindSpeedValue.setText(new DecimalFormat("#0.00").format(Conversion.msTomph(WindSpeedInms)) + " " + getString(R.string.mph_label));
+            else if (WindSpeedUnit.equals(getString(R.string.kmh_label)))
+                WindSpeedValue.setText(new DecimalFormat("#0.00").format(Conversion.msTokmh(WindSpeedInms)) + " " + getString(R.string.kmh_label));
+        }
+    }
+
+
 }
