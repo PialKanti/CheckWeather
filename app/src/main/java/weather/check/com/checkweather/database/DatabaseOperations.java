@@ -187,4 +187,28 @@ public class DatabaseOperations {
 
         return isOK;
     }
+
+    public int getWeatherTableSize() {
+        String query = "Select * from " + WeatherReaderContract.WeatherData.TABLE_NAME;
+        Cursor cursor = db.rawQuery(query, null);
+        int size = cursor.getCount();
+        cursor.close();
+        return size;
+    }
+
+    public int getForecastTableSize() {
+        String query = "Select * from " + WeatherReaderContract.ForecastData.TABLE_NAME;
+        Cursor cursor = db.rawQuery(query, null);
+        int size = cursor.getCount();
+        cursor.close();
+        return size;
+    }
+
+    public void deleteWeatherTable() {
+        db.delete(WeatherReaderContract.WeatherData.TABLE_NAME, null, null);
+    }
+
+    public void deleteForecastTable() {
+        db.delete(WeatherReaderContract.ForecastData.TABLE_NAME, null, null);
+    }
 }

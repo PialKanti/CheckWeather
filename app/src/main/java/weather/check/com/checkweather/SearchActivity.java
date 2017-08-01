@@ -3,11 +3,13 @@ package weather.check.com.checkweather;
 import android.Manifest;
 import android.content.Context;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.graphics.Color;
 import android.location.Address;
 import android.location.Geocoder;
 import android.location.Location;
+import android.location.LocationListener;
 import android.location.LocationManager;
 import android.provider.Settings;
 import android.support.design.widget.CoordinatorLayout;
@@ -17,6 +19,7 @@ import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.support.v7.preference.PreferenceManager;
 import android.support.v7.widget.Toolbar;
 import android.text.Editable;
 import android.text.TextWatcher;
@@ -34,6 +37,9 @@ import com.android.volley.Request;
 import com.android.volley.Response;
 import com.android.volley.VolleyError;
 import com.android.volley.toolbox.JsonObjectRequest;
+import com.google.android.gms.location.FusedLocationProviderClient;
+import com.google.android.gms.location.LocationServices;
+import com.google.android.gms.tasks.OnSuccessListener;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -49,6 +55,7 @@ import weather.check.com.checkweather.POJO.WeatherAPIKey;
 import weather.check.com.checkweather.POJO.WeatherDetails;
 import weather.check.com.checkweather.utills.CheckingInternetConnection;
 import weather.check.com.checkweather.utills.GooglePlaceAPI;
+import weather.check.com.checkweather.utills.LocationTracker;
 import weather.check.com.checkweather.utills.ParseJsonData;
 import weather.check.com.checkweather.singleton.MySingleton;
 
@@ -64,6 +71,8 @@ public class SearchActivity extends AppCompatActivity {
 
     private String CityName;
     private ArrayList<String> CityPredictionData;
+    private FusedLocationProviderClient locationProviderClient;
+    double Lat, Long;
 
 
     @Override
@@ -71,11 +80,16 @@ public class SearchActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_search);
 
-        grantPermissions();
+        if (requestForPermission()) {
+            grantPermissions();
+        }
 
         initialize();
 
-        AutoCompleteTextWatcher();
+        SharedPreferences preferences = PreferenceManager.getDefaultSharedPreferences(this);
+        if (preferences.getBoolean(getString(R.string.pref_autocomplete_edittext), true)) {
+            AutoCompleteTextWatcher(); // If checkbox id checked then autocomplete EditText will work
+        }
 
         SearchButton.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -93,6 +107,15 @@ public class SearchActivity extends AppCompatActivity {
 
     }
 
+    public boolean requestForPermission() {
+        SharedPreferences preferences = getSharedPreferences(getString(R.string.preference_file_name), Context.MODE_PRIVATE);
+        String cityName = preferences.getString("City", null);
+        if (cityName != null)
+            return false;
+        else
+            return true;
+    }
+
 
     public void initialize() {
         AutoCompleteSearchBar = (AutoCompleteTextView) findViewById(R.id.actv_SearchBar);
@@ -101,7 +124,7 @@ public class SearchActivity extends AppCompatActivity {
         toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
         toolbar.setTitleTextColor(getResources().getColor(R.color.white_font));
-        getSupportActionBar().setTitle("Add a location");
+        getSupportActionBar().setTitle("Add location");
         coordinatorLayout = (CoordinatorLayout) findViewById(R.id.CoordinatorLayout);
         locationButton = (FloatingActionButton) findViewById(R.id.fb_location);
 
@@ -155,13 +178,11 @@ public class SearchActivity extends AppCompatActivity {
         GooglePlaceAPI api = new GooglePlaceAPI();
         String url = api.getGooglePlaceURL();
         url += input;
-        Log.d("Debug", url);
 
         JsonObjectRequest jsonObjectRequest = new JsonObjectRequest(Request.Method.GET, url, null, new Response.Listener<JSONObject>() {
 
             @Override
             public void onResponse(JSONObject response) {
-                Log.d("Debug", "OK");
                 try {
                     JSONArray jsonArray = response.getJSONArray("predictions");
                     for (int i = 0; i < jsonArray.length(); i++) {
@@ -220,6 +241,7 @@ public class SearchActivity extends AppCompatActivity {
             AutoCompleteSearchBar.setText("");
             if (CityName != null && !CityName.isEmpty()) {
                 Intent intent = new Intent(SearchActivity.this, WeatherShowActivity.class);
+                intent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
                 intent.putExtra("CityName", CityName);
                 startActivity(intent);
                 finish();
@@ -244,27 +266,48 @@ public class SearchActivity extends AppCompatActivity {
     public void getLocation() {
         LocationManager lManager = (LocationManager) this.getSystemService(Context.LOCATION_SERVICE);
 
-        boolean netEnabled = lManager.isProviderEnabled(LocationManager.GPS_PROVIDER);
-        if (netEnabled) {
+        boolean isGPSEnabled = lManager.isProviderEnabled(LocationManager.GPS_PROVIDER);
+        if (isGPSEnabled) {
             if (ContextCompat.checkSelfPermission(this, android.Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED &&
                     ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
                 ActivityCompat.requestPermissions(this, new String[]{android.Manifest.permission.ACCESS_COARSE_LOCATION, Manifest.permission.ACCESS_FINE_LOCATION}, 1);
             }
-            Location lastLocation = lManager.getLastKnownLocation(LocationManager.NETWORK_PROVIDER);
-            Double Lat = lastLocation.getLatitude();
-            Double Long = lastLocation.getLongitude();
+            locationProviderClient = LocationServices.getFusedLocationProviderClient(this);
 
-            try {
-                Geocoder geocoder = new Geocoder(this, Locale.getDefault());
-                List<Address> addresses = geocoder.getFromLocation(Lat, Long, 1);
-                String cityName = addresses.get(0).getAddressLine(0);
-                String stateName = addresses.get(0).getAddressLine(1);
-                String countryName = addresses.get(0).getAddressLine(2);
+            locationProviderClient.getLastLocation().addOnSuccessListener(this, new OnSuccessListener<Location>() {
+                @Override
+                public void onSuccess(Location location) {
+                    try {
+                        if (location != null) {
+                            Lat = location.getLatitude();
+                            Long = location.getLongitude();
+                            Geocoder geocoder = new Geocoder(getApplicationContext(), Locale.getDefault());
+                            List<Address> addresses = geocoder.getFromLocation(Lat, Long, 1);
+                            String cityName = addresses.get(0).getLocality();
+                            // Setting cityname to AutoComplete TextView
+                            AutoCompleteSearchBar.setText(cityName);
+                            AutoCompleteSearchBar.setSelection(AutoCompleteSearchBar.length());
 
-                Toast.makeText(getApplicationContext(), stateName, Toast.LENGTH_SHORT).show();
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
+                            Toast.makeText(getApplicationContext(), cityName, Toast.LENGTH_SHORT).show();
+                        }else{
+                            Toast.makeText(getApplicationContext(), "Wait few seconds. Then click location button", Toast.LENGTH_SHORT).show();
+                        }
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
+                }
+            });
+
+        } else {
+            Snackbar snackbar = Snackbar.make(coordinatorLayout, "LocationTracker not enabled", Snackbar.LENGTH_SHORT);
+            snackbar.setAction("Enable", new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    startActivity(new Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS));
+                }
+            });
+            snackbar.setActionTextColor(Color.RED);
+            snackbar.show();
         }
     }
 }

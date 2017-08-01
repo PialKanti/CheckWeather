@@ -17,4 +17,5 @@
 
     <string name="pref_temp_unit_key">temperature_unit_key</string>
     <string name="pref_windspeed_unit_key">windspeed_unit_key</string>
+    <string name="pref_autocomplete_edittext">autocomplete_edittext_key</string>
 </resources>

@@ -70,6 +70,9 @@ public class WeatherShowActivity extends AppCompatActivity implements SharedPref
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_weather_show);
 
+        Toolbar toolbar = (Toolbar) findViewById(R.id.transparent_toolbar);
+        setSupportActionBar(toolbar);
+        getSupportActionBar().setTitle("");
 
         Intent intent = getIntent();
         if (intent.hasExtra("CityName")) {
@@ -86,10 +89,6 @@ public class WeatherShowActivity extends AppCompatActivity implements SharedPref
             loadDataFromInternet = false;
         }
 
-        Toolbar toolbar = (Toolbar) findViewById(R.id.transparent_toolbar);
-        setSupportActionBar(toolbar);
-        getSupportActionBar().setTitle("");
-
         initialize();
         WeatherContent.setVisibility(View.GONE);
         progressBar.setVisibility(View.VISIBLE);
@@ -101,6 +100,43 @@ public class WeatherShowActivity extends AppCompatActivity implements SharedPref
             setData();
         }
 
+    }
+
+    @Override
+    protected void onNewIntent(Intent intent) {
+        super.onNewIntent(intent);
+        Log.d("Debug", "Check onNewIntent");
+
+        if (intent.hasExtra("CityName")) {
+            city = intent.getStringExtra("CityName");
+            Log.d("Debug","CityName :"+city);
+            loadDataFromInternet = true;
+
+            //Writing into SharedPreferences
+            SharedPreferences preferences = getSharedPreferences(getString(R.string.preference_file_name), Context.MODE_PRIVATE);
+            SharedPreferences.Editor editor = preferences.edit();
+            editor.putString("City", city);
+            editor.commit();
+            Log.d("Debug", "Writing into SharedPreferences");
+        } else {
+            loadDataFromInternet = false;
+        }
+
+        initialize();
+        WeatherContent.setVisibility(View.GONE);
+        progressBar.setVisibility(View.VISIBLE);
+
+        //Checking if data exits in database or not
+        if (loadDataFromInternet) {
+            loadWeatherData(city, true);
+        } else {
+            setData();
+        }
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
     }
 
     @Override
@@ -124,9 +160,14 @@ public class WeatherShowActivity extends AppCompatActivity implements SharedPref
                     Toast.makeText(getApplicationContext(), "No internet connection", Toast.LENGTH_SHORT).show();
                 }
                 return true;
+            case R.id.menu_change_location:
+                Intent changeLocationintent = new Intent(WeatherShowActivity.this, SearchActivity.class);
+                startActivity(changeLocationintent);
+                return true;
             case R.id.menu_settings:
-                Intent intent = new Intent(WeatherShowActivity.this, SettingsActivity.class);
-                startActivity(intent);
+                Intent settingsintent = new Intent(WeatherShowActivity.this, SettingsActivity.class);
+                startActivity(settingsintent);
+                return true;
             default:
                 return super.onOptionsItemSelected(item);
         }
@@ -298,6 +339,13 @@ public class WeatherShowActivity extends AppCompatActivity implements SharedPref
                 dbOperations = new DatabaseOperations(db);
 
                 if (shouldInsert) {
+                    if(dbOperations.getWeatherTableSize() > 0){
+                        dbOperations.deleteWeatherTable();
+                    }
+                    if(dbOperations.getForecastTableSize() > 0){
+                        dbOperations.deleteForecastTable();
+                    }
+
                     //Inserting into database
                     dbOperations.insertIntoWeatherTable(Wdetails);
                     dbOperations.insertIntoForecastTable(forecasts);

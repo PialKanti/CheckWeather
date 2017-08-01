@@ -14,4 +14,10 @@
         android:entries="@array/pref_windspeed_unit_labels"
         android:entryValues="@array/pref_windspeed_unit_values"
         android:defaultValue="@string/mph_label"></ListPreference>
+    <CheckBoxPreference
+        android:key="@string/pref_autocomplete_edittext"
+        android:title="Show City Name Suggestion"
+        android:summary="A suggestion of cities will be appeared while typing"
+        android:defaultValue="true">
+    </CheckBoxPreference>
 </PreferenceScreen>
