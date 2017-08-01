@@ -22,11 +22,12 @@ A simple weather app which can tell the weather update of your city
 ## User Limits for Auto Suggestion (Google Place API)
 The Google Places API Web Service enforces a default limit of <b>1,000 free requests per 24 hour period</b>. So if the request count pass the limit the app may crash. If this happens, just stop <b>Show City Name Suggestion</b> from app settings.
 
+## Apk Link
+Download apk file from [here](https://github.com/PialKanti/CheckWeather/raw/master/app-debug.apk)
+
 ## Demo
 ![Imgur](http://i.imgur.com/hNUBc5d.png)
 ![Imgur](http://i.imgur.com/nbdFCmX.png)
 ![Imgur](http://i.imgur.com/LawC3hU.png)
 ![Imgur](http://i.imgur.com/Nwa8mcz.png)
 
-## Apk Link
-Download apk file from [here](https://github.com/PialKanti/CheckWeather/raw/master/app-debug.apk)
