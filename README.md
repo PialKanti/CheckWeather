@@ -27,3 +27,6 @@ The Google Places API Web Service enforces a default limit of <b>1,000 free requ
 ![Imgur](http://i.imgur.com/nbdFCmX.png)
 ![Imgur](http://i.imgur.com/LawC3hU.png)
 ![Imgur](http://i.imgur.com/Nwa8mcz.png)
+
+## Apk Link
+Download apk file from [here](https://github.com/PialKanti/CheckWeather/raw/master/app-debug.apk)
